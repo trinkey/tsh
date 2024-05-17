@@ -26,7 +26,7 @@ class _Command:
 
     command_name: str
     help_string: str
-    callback: str
+    callback: Callable
 
 class _Display:
     def __init__(self) -> None: ...

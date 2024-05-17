@@ -1,14 +1,16 @@
-from readchar import readchar
 import socket
 import os
 
+from .ansi import ansi
+
+from readchar import readchar
 from typing import Callable
 
 hostname: str = socket.gethostname()
 username: str = os.getlogin()
 
 default_commands: list[tuple[str, str, Callable]] = [
-    ("ls", "Lists the files in a directory.", lambda x: x)
+    ("ls", "Lists the files in a directory.", lambda command, path: f"{' '.join(os.listdir(path))}\n")
 ]
 
 def get_char() -> int:

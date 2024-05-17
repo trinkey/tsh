@@ -21,7 +21,7 @@ class CommandManager(_CommandManager):
 
         width = self.display.term_size().width # type: ignore
         if command_name == "help":
-            output = f"{ansi.COLORS.TEXT.BRIGHT_BLACK}==={ansi.COLORS.RESET} Help {ansi.COLORS.TEXT.BRIGHT_BLACK}==={ansi.COLORS.RESET}\n"
+            output = f"{ansi.COLORS.TEXT.BRIGHT_BLACK}==={ansi.COLORS.RESET} tSH Help {ansi.COLORS.TEXT.BRIGHT_BLACK}==={ansi.COLORS.RESET}\n"
             output = ' ' * (min(20, width - self.display._string_length(output)) // 2) + output
 
             for command in self.commands:
@@ -32,7 +32,7 @@ class CommandManager(_CommandManager):
         if command_name not in self.commands:
             return f"{ansi.COLORS.TEXT.RED}Unknown command '{command_name}'.{ansi.COLORS.RESET}\nYou can view a list of all commands with '{ansi.COLORS.TEXT.GREEN}help{ansi.COLORS.RESET}'.\n"
 
-        return ""
+        return self.commands[command_name].callback(command, self.display.path)
 
     def _hook_display(self, display) -> None:
         self.display = display

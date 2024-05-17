@@ -1,54 +1,73 @@
 from .ansi import ansi
 from .util import get_escape_string
 
-class EscapeSequence:
-    sequence: list[int]
+from typing import Callable
 
-    @staticmethod
-    def on_callback(
-        current_command: str,
-        past_commands: list[str],
-        past_index: int,
-        cursor_position: int
-    ) -> tuple[str, int, int, str]: ...
+def Delete(
+    current_command: str,
+    past_commands: list[str],
+    past_index: int,
+    cursor_position: int
+) -> tuple[str, int, int]:
+    current_command = current_command[:cursor_position - 3:] + current_command[cursor_position + 1::]
+    return (
+        current_command,
+        past_index,
+        cursor_position - 3
+    )
 
-class Delete(EscapeSequence):
-    sequence = [27, 91, 51, 126]
+def Left(
+    current_command: str,
+    past_commands: list[str],
+    past_index: int,
+    cursor_position: int
+) -> tuple[str, int, int]:
+    _ = current_command[max(0, cursor_position - 3):-2:]
+    return (
+        current_command[:cursor_position - 2:] + current_command[cursor_position::],
+        past_index,
+        max(0, cursor_position - 3)
+    )
 
-    @staticmethod
-    def on_callback(
-        current_command: str,
-        past_commands: list[str],
-        past_index: int,
-        cursor_position: int
-    ) -> tuple[str, int, int, str]:
-        current_command = current_command[:cursor_position - 3:] + current_command[cursor_position + 1::]
-        return (
-            current_command,
-            past_index,
-            cursor_position - 3,
-            f"{ansi.CURSOR.LEFT(3)}{current_command[cursor_position + 1::]}    {ansi.CURSOR.LEFT(4 + len(current_command[cursor_position + 1::]))}"
-        )
+def Home(
+    current_command: str,
+    past_commands: list[str],
+    past_index: int,
+    cursor_position: int
+) -> tuple[str, int, int]:
+    return (
+        current_command,
+        past_index,
+        0
+    )
 
-class Left(EscapeSequence):
-    sequence = [27, 91, 68]
+def End(
+    current_command: str,
+    past_commands: list[str],
+    past_index: int,
+    cursor_position: int
+) -> tuple[str, int, int]:
+    return (
+        current_command,
+        past_index,
+        len(current_command)
+    )
 
-    @staticmethod
-    def on_callback(
-        current_command: str,
-        past_commands: list[str],
-        past_index: int,
-        cursor_position: int
-    ) -> tuple[str, int, int, str]:
-        _ = current_command[max(0, cursor_position - 3):-2:]
-        return (
-            current_command[:-2:],
-            past_index,
-            max(0, cursor_position - 2),
-            f"{ansi.CURSOR.LEFT(2)}{_}  {ansi.CURSOR.LEFT(min(len(current_command), len(_) + 3))}"
-        )
+escape_sequences: dict[str, Callable] = {
+    # 27 ... - unix
+    get_escape_string([27, 91, 51, 126]): Delete,
+    get_escape_string([27, 91, 68]): Left,
+    get_escape_string([27, 91, 72]): Home,
+    get_escape_string([27, 91, 70]): End,
 
-escape_sequences: dict[str, type['EscapeSequence']] = {
-    get_escape_string(Delete.sequence): Delete,
-    get_escape_string(Left.sequence): Left
+    # 224 ... - nt
+    get_escape_string([224, 83]): Delete,
+    get_escape_string([224, 75]): Left,
+    get_escape_string([224, 71]): Home,
+    get_escape_string([224, 79]): End,
+
+    # 0 ... - nt
+    get_escape_string([0, 75]): Left,
+    get_escape_string([0, 71]): Home,
+    get_escape_string([0, 79]): End
 }

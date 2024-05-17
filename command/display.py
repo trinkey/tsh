@@ -18,6 +18,7 @@ class Display(_Display):
         self.cursor_position: int = 0
         self.past_index: int = 0
         self.previous_line: str = ""
+        self.prev_lines_up: int = 0
 
     def term_size(self) -> DotIndex:
         x = shutil.get_terminal_size()
@@ -37,6 +38,10 @@ class Display(_Display):
             for word in block.split(" "):
                 if self._string_length(f"{chunk} {word}") >= width:
                     chunks.append(chunk)
+                    while len(word) >= width:
+                        chunks.append(word[:width:])
+                        word = word[width::]
+
                     chunk = word
                 else:
                     chunk += f"{'' if first else ' '}{word}"
@@ -51,17 +56,9 @@ class Display(_Display):
         return chunks
 
     def keyboard_event(self, key: int) -> None:
-        # 27 91 51 126 delete
-        # 27 91 65 up
-        # 27 91 68 left
-        # 27 91 66 down
-        # 27 91 67 right
-        # 27 91 53 126 pgup
-        # 27 91 54 126 pgdn
-
-        f = open("keys.log", "a")
-        f.write(f"{key} ")
-        f.close()
+        # f = open("keys.log", "a")
+        # f.write(f"{key} ")
+        # f.close()
 
         width = self.term_size().width # type: ignore
 
@@ -69,6 +66,8 @@ class Display(_Display):
             self._print(f"{ansi.COLORS.TEXT.RED}^C{ansi.COLORS.RESET}\n{self._get_ps1()}") # type: ignore
             self.current_input = ""
             self.cursor_position = 0
+            self.prev_lines_up = 0
+            self.previous_line = ""
 
         elif key == 4: # Ctrl + D
             self.display_text("exit\n")
@@ -81,18 +80,21 @@ class Display(_Display):
             temp = self.current_input
             self.current_input = ""
             self.cursor_position = 0
+            self.previous_line = ""
 
-            self.display_text("\n")
+            self.display_text("\n" + (ansi.CURSOR.DOWN(self.prev_lines_up) if self.prev_lines_up else ''))
             self.display_text(self.manager.command(temp) + self._get_ps1())
+
+            self.prev_lines_up = 0
 
         elif key == 12: # Ctrl + L
             self.display_text(f"{ansi.ERASE.ALL}{ansi.CURSOR.HOME}")
 
-        elif key == 27: # Escape, managed later
+        elif key == 0 or key == 27 or key == 224: # Escape (27: unix, 0/224: nt), managed later
             ...
 
         elif key == 8 or key == 127: # Backspace (8: nt / 127: unix)
-            if len(self.current_input):
+            if len(self.current_input) and self.cursor_position > 0:
                 self.current_input = self.current_input[:max(0, self.cursor_position - 1):] + self.current_input[self.cursor_position::]
                 self.cursor_position -= 1
 
@@ -102,30 +104,27 @@ class Display(_Display):
             self.cursor_position += 1
 
         else: # Other control character
-            self.display_text(str(key) + " ")
+            ... # Debugging: self.display_text(str(key) + " ")
 
-        if key == 27: # Escape character
-            self.escape_sequence = [27]
+        if key == 0 or key == 27 or key == 224: # Escape character
+            self.escape_sequence = [key]
 
-        elif len(self.escape_sequence) and self.escape_sequence[0] == 27:
+        elif len(self.escape_sequence) > 0 and len(self.escape_sequence) <= 5 and self.escape_sequence[0] == 27:
             self.escape_sequence.append(key)
             escape_string = get_escape_string(self.escape_sequence)
 
             if escape_string in escape_sequences:
                 self.current_input, \
                 self.past_index, \
-                self.cursor_position, \
-                temp = escape_sequences[escape_string].on_callback(
+                self.cursor_position = escape_sequences[escape_string](
                     self.current_input,
                     self.manager.previous_commands,
                     self.past_index,
                     self.cursor_position
                 )
 
-                self._print(temp)
-
         ps1 = self._get_ps1()
-        x = len(self.display_text(self.previous_line, allow_printing=False)) - 1
+        x = len(self.display_text(self.previous_line, allow_printing=False)) - 1 - self.prev_lines_up
         curr = f"{ps1}{self.current_input}"
         self.previous_line = curr
 
@@ -135,19 +134,24 @@ class Display(_Display):
             self._string_length(ps1)
         ))
 
+        sys.stdout.flush()
+
     def _correct_cur_pos(self, string: list[str], ps1_length: int=0) -> str:
-        remaining = self.cursor_position + ps1_length
+        remaining = self.cursor_position + ps1_length - 1
+        self.prev_lines_up = 0
         line_count = 0
 
         for i in string:
             remaining -= self._string_length(i)
             line_count += 1
 
-            if remaining <= 0:
+            if remaining < 0:
                 if len(string) - line_count:
-                    return f"{ansi.CURSOR.LEFT(len(string[-1]))}{ansi.CURSOR.UP(len(string) - line_count)}{ansi.CURSOR.RIGHT(self._string_length(i) - remaining)}"
+                    x = self._string_length(i) + remaining - (ps1_length + 6 if line_count == 1 else 0)
+                    self.prev_lines_up = len(string) - line_count
+                    return f"{ansi.CURSOR.LEFT(self._string_length(string[-1]))}{ansi.CURSOR.UP(self.prev_lines_up)}{ansi.CURSOR.RIGHT(x) if x > 0 else ''}"
 
-                elif -remaining - 1 != 0:
+                elif -remaining - 1:
                     return ansi.CURSOR.LEFT(-remaining - 1)
 
                 else:
@@ -161,6 +165,7 @@ class Display(_Display):
     def _start(self, default_path: Path=Path(os.path.expanduser("~/"))) -> None:
         self.path = default_path
         self.display_text(self._get_ps1())
+        sys.stdout.flush()
 
     def _get_ps1(self) -> str:
         return f"{ansi.COLORS.TEXT.BRIGHT_GREEN}{ansi.STYLES.BOLD}{username}@{hostname}{ansi.COLORS.RESET}:{ansi.COLORS.TEXT.BRIGHT_BLUE}{ansi.STYLES.BOLD}{self.path}{ansi.COLORS.RESET}$ "
@@ -170,7 +175,6 @@ class Display(_Display):
 
     def _print(self, text: str) -> None:
         print(text, end="")
-        sys.stdout.flush()
 
     def _hook_manager(self, manager: _CommandManager) -> None:
         self.manager = manager
