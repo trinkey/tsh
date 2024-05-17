@@ -59,6 +59,10 @@ class Display(_Display):
         # 27 91 53 126 pgup
         # 27 91 54 126 pgdn
 
+        f = open("keys.log", "a")
+        f.write(f"{key} ")
+        f.close()
+
         width = self.term_size().width # type: ignore
 
         if key == 3: # Ctrl + C
@@ -70,13 +74,10 @@ class Display(_Display):
             self.display_text("exit\n")
             exit()
 
-        elif key == 8: # Ctrl + Backspace (TODO)
-            ...
-
         elif key == 9: # Tab (TODO)
             ...
 
-        elif key == 10: # Enter
+        elif key == 10 or key == 13: # Enter (10: unix / 13: nt)
             temp = self.current_input
             self.current_input = ""
             self.cursor_position = 0
@@ -87,13 +88,10 @@ class Display(_Display):
         elif key == 12: # Ctrl + L
             self.display_text(f"{ansi.ERASE.ALL}{ansi.CURSOR.HOME}")
 
-        elif key == 13: # Carriage Return, ignored
-            ...
-
         elif key == 27: # Escape, managed later
             ...
 
-        elif key == 127: # Backspace
+        elif key == 8 or key == 127: # Backspace (8: nt / 127: unix)
             if len(self.current_input):
                 self.current_input = self.current_input[:max(0, self.cursor_position - 1):] + self.current_input[self.cursor_position::]
                 self.cursor_position -= 1
