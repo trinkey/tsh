@@ -1,4 +1,6 @@
-# command-line
+# tsh
+(**t**rinkey **sh**ell - name idea by @uncenter)
+
 it's like bash but i made it
 
 ## !! VERY WIP !!
