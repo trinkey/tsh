@@ -9,19 +9,22 @@ how to use:
 3. run main.py
 4. profit
 
+## known issues
+- the cursor position on the first line when there are multiple lines is off by one
+
 ## roadmap
 (assuming i don't get distracted)
 1. finish the text engine
    - [x] delete
    - [x] left
-   - [ ] right
-   - [ ] home
-   - [ ] end
+   - [x] right
+   - [x] home
+   - [x] end
    - [ ] up
    - [ ] down
-   - [ ] tab (maybe wait until after implemting some commands?)
+   - [ ] tab (maybe wait until after implementing some commands?)
 2. implement basic commands
-   - [ ] ls
+   - [ ] ls (kinda works?)
    - [ ] cd
    - [ ] cat
    - [ ] echo

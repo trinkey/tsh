@@ -1,5 +1,6 @@
 import socket
 import os
+import re
 
 from .ansi import ansi
 
@@ -18,3 +19,6 @@ def get_char() -> int:
 
 def get_escape_string(sequence: list[int]) -> str:
     return "-".join([str(i) for i in sequence])
+
+def ansi_length(text: str) -> int:
+    return len(re.sub(r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]", "", text))

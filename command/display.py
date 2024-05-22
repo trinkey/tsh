@@ -1,14 +1,13 @@
 import shutil
 import sys
 import os
-import re
 
 from pathlib import Path
 from DotIndex import DotIndex
 
 from .types import _CommandManager, _Display
 from .ansi import ansi
-from .util import username, hostname, get_escape_string
+from .util import username, hostname, get_escape_string, ansi_length
 from .escape_sequences import escape_sequences
 
 class Display(_Display):
@@ -36,7 +35,7 @@ class Display(_Display):
             first = True
 
             for word in block.split(" "):
-                if self._string_length(f"{chunk} {word}") >= width:
+                if ansi_length(f"{chunk} {word}") >= width:
                     chunks.append(chunk)
                     while len(word) >= width:
                         chunks.append(word[:width:])
@@ -56,10 +55,6 @@ class Display(_Display):
         return chunks
 
     def keyboard_event(self, key: int) -> None:
-        # f = open("keys.log", "a")
-        # f.write(f"{key} ")
-        # f.close()
-
         width = self.term_size().width # type: ignore
 
         if key == 3: # Ctrl + C
@@ -131,7 +126,7 @@ class Display(_Display):
         self.display_text(f"{ansi.CURSOR.LEFT(width)}{ansi.CURSOR.UP(x) if x else ''}{ansi.ERASE.SCREEN_PAST_CURSOR}")
         self.display_text(self._correct_cur_pos(
             self.display_text(curr),
-            self._string_length(ps1)
+            ansi_length(ps1)
         ))
 
         sys.stdout.flush()
@@ -142,17 +137,21 @@ class Display(_Display):
         line_count = 0
 
         for i in string:
-            remaining -= self._string_length(i)
+            remaining -= ansi_length(i)
             line_count += 1
 
             if remaining < 0:
                 if len(string) - line_count:
-                    x = self._string_length(i) + remaining - (ps1_length + 6 if line_count == 1 else 0)
                     self.prev_lines_up = len(string) - line_count
-                    return f"{ansi.CURSOR.LEFT(self._string_length(string[-1]))}{ansi.CURSOR.UP(self.prev_lines_up)}{ansi.CURSOR.RIGHT(x) if x > 0 else ''}"
 
-                elif -remaining - 1:
-                    return ansi.CURSOR.LEFT(-remaining - 1)
+                    left = ansi_length(string[-1])
+                    up = self.prev_lines_up
+                    right = ansi_length(i) + remaining
+
+                    return f"{ansi.CURSOR.LEFT(left)}{ansi.CURSOR.UP(up)}{ansi.CURSOR.RIGHT(right) if right > 0 else ''}"
+
+                elif -remaining - 1 if len(string) == 1 else -remaining:
+                    return ansi.CURSOR.LEFT(-remaining - 1 if len(string) == 1 else -remaining)
 
                 else:
                     break
@@ -169,9 +168,6 @@ class Display(_Display):
 
     def _get_ps1(self) -> str:
         return f"{ansi.COLORS.TEXT.BRIGHT_GREEN}{ansi.STYLES.BOLD}{username}@{hostname}{ansi.COLORS.RESET}:{ansi.COLORS.TEXT.BRIGHT_BLUE}{ansi.STYLES.BOLD}{self.path}{ansi.COLORS.RESET}$ "
-
-    def _string_length(self, text: str) -> int:
-        return len(re.sub(r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]", "", text))
 
     def _print(self, text: str) -> None:
         print(text, end="")
