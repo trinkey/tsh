@@ -26,7 +26,7 @@ how to use:
    - [ ] down
    - [ ] tab (maybe wait until after implementing some commands?)
 2. implement basic commands
-   - [ ] ls (kinda works?)
+   - [x] ls (halfway, gonna still add more functionality)
    - [ ] cd
    - [ ] cat
    - [ ] echo

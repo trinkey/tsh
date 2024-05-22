@@ -1,8 +1,9 @@
 from .command_manager import CommandManager
 from .command import Command
 from .display import Display
-from .util import default_commands, get_char
+from .util import get_char
 from .types import _Display as display
+from .default_commands import default_commands
 
 from typing import Callable
 

@@ -37,7 +37,7 @@ class Display(_Display):
             for word in block.split(" "):
                 if ansi_length(f"{chunk} {word}") >= width:
                     chunks.append(chunk)
-                    while len(word) >= width:
+                    while ansi_length(word) >= width:
                         chunks.append(word[:width:])
                         word = word[width::]
 
@@ -146,7 +146,7 @@ class Display(_Display):
 
                     left = ansi_length(string[-1])
                     up = self.prev_lines_up
-                    right = ansi_length(i) + remaining
+                    right = ansi_length(i) + remaining + (0 if line_count else 1)
 
                     return f"{ansi.CURSOR.LEFT(left)}{ansi.CURSOR.UP(up)}{ansi.CURSOR.RIGHT(right) if right > 0 else ''}"
 
