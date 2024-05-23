@@ -78,6 +78,8 @@ def get_command_args(command: str) -> dict[str, list[str]]:
             else:
                 string += i
 
+            escape = False
+
         else:
             string += i
 

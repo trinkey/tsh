@@ -1,6 +1,6 @@
 from .ansi import ansi
 from .types import _Command, _CommandManager
-from .util import ansi_length
+from .util import ansi_length, get_command_args
 
 class CommandManager(_CommandManager):
     def __init__(self):
@@ -25,15 +25,29 @@ class CommandManager(_CommandManager):
             output = f"{ansi.COLORS.TEXT.BRIGHT_BLACK}==={ansi.COLORS.RESET} tSH Help {ansi.COLORS.TEXT.BRIGHT_BLACK}==={ansi.COLORS.RESET}\n"
             output = ' ' * (min(50, width - ansi_length(output)) // 2) + output
 
-            for command in self.commands:
-                output += f"{ansi.COLORS.TEXT.BRIGHT_YELLOW}{command}{ansi.COLORS.RESET}\n  {self.commands[command]}\n"
+            x = get_command_args(command)
+            if len(x["strings"]):
+                commands = x["strings"]
+            else:
+                commands = self.commands
+
+            for command in commands:
+                try:
+                    output += f"{ansi.COLORS.TEXT.BRIGHT_YELLOW}{command}{ansi.COLORS.RESET}\n  {self.commands[command]}\n"
+                except KeyError:
+                    output += f"{ansi.COLORS.TEXT.RED}Unknown command '{command}'.\n"
 
             return output
 
         if command_name not in self.commands:
             return f"{ansi.COLORS.TEXT.RED}Unknown command '{command_name}'.{ansi.COLORS.RESET}\nYou can view a list of all commands with '{ansi.COLORS.TEXT.GREEN}help{ansi.COLORS.RESET}'.\n"
 
-        return self.commands[command_name].callback(command, self.display.path)
+        try:
+            return self.commands[command_name].callback(command, self.display.path)
+        except PermissionError:
+            return f"{ansi.COLORS.TEXT.RED}{command_name}: Permission denied.{ansi.COLORS.RESET}\n"
+        except FileNotFoundError:
+            return f"{ansi.COLORS.TEXT.RED}{command_name}: File not found.{ansi.COLORS.RESET}\n"
 
     def _hook_display(self, display) -> None:
         self.display = display

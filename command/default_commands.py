@@ -20,79 +20,100 @@ def ls(command: str, path: pathlib.Path) -> str:
                 return 0
 
         if "t" in args["args"]:
-            ... # sort by time modified
+            return os.path.getmtime(path / a)
 
         if a[0] == ".":
             a = a[1::]
         return a.lower()
 
     args = get_command_args(command)
+
+    for i in args["args"]:
+        if i not in "aAlLrst":
+            return f"{ansi.COLORS.TEXT.RED}Invalid argument '{i}'.{ansi.COLORS.RESET}\nYou can view the command format by running '{ansi.COLORS.TEXT.GREEN}help ls{ansi.COLORS.RESET}'.\n"
+
+    if len(args["strings"]) == 1:
+        if args["strings"][0][0] == "/":
+            path = pathlib.Path(args["strings"][0])
+        elif args["strings"][0][0] == "~":
+            path = pathlib.Path(os.path.expanduser(args["strings"][0]))
+        else:
+            path = path / args["strings"][0]
+
+    elif len(args["strings"]) > 1:
+        return f"{ansi.COLORS.TEXT.RED}Invalid amount of arg strings (expected 0-1, got {len(args['strings'])}){ansi.COLORS.RESET}\n"
+
     directories = os.listdir(path)
 
-    enable_parent = "a" in args["args"]
-    if not enable_parent and "A" not in args["args"]:
+    if "a" in args["args"]:
+        directories = [".", ".."] + directories
+    elif "A" not in args["args"]:
         directories = [i for i in directories if i[0] != "."]
 
     directories = sorted(directories, key=sort, reverse="r" in args["args"])
+    temp_strings = []
 
-    if enable_parent:
-        directories = [".", ".."] + directories
+    if "L" in args["args"]:
+        temp_strings.append([
+            "perms",
+            "owner",
+            "group",
+            "size",
+            "name",
+            ""
+        ])
 
-    if "l" in args["args"]:
-        temp_strings = []
+    strings = []
+    joiner = "\n"
+    include_space_on_filenames = False
+    include_full_link = "l" in args["args"]
 
-        if "L" in args["args"]:
+    for i in directories:
+        abs_file = path / i
+        link = os.path.islink(abs_file)
+
+        if link:
+            x = os.readlink(abs_file)
+            file = pathlib.Path(("/" if x[0] not in "~/" else "") + (os.path.expanduser(x) if x[0] == "~" else x))
+        else:
+            file = abs_file
+
+        if not include_space_on_filenames and (" " in str(file.stem) + str(abs_file.stem)):
+            include_space_on_filenames = True
+
+        try:
             temp_strings.append([
-                "perms",
-                "owner",
-                "group",
-                "size",
-                "name",
-                ""
+                stat.filemode(os.stat(abs_file, follow_symlinks=False).st_mode),
+                file.owner(),
+                file.group(),
+                (bytes_to_human if "h" in args["args"] else str)(os.path.getsize(file)),
+                f"{abs_file.stem} -> {file}" if include_full_link and link else str(file.stem) if i != "." else "."
             ])
 
-        strings = []
-        joiner = "\n"
-        include_space_on_filenames = False
+            if link:
+                color = ansi.COLORS.TEXT.BRIGHT_YELLOW
+            elif os.path.isdir(abs_file):
+                color = ansi.COLORS.TEXT.BRIGHT_BLUE
+            elif temp_strings[-1][0][6] == "x":
+                color = ansi.COLORS.TEXT.BRIGHT_GREEN
+            else:
+                color = ""
 
-        for i in directories:
-            abs_file = path / i
-            link = os.path.islink(abs_file)
-            file = pathlib.Path(os.readlink(abs_file)) if link else abs_file
+            temp_strings[-1].append(color)
 
-            if not include_space_on_filenames and (" " in str(file.stem) + str(abs_file.stem)):
-                include_space_on_filenames = True
+        except FileNotFoundError:
+            temp_strings.append([
+                stat.filemode(os.stat(abs_file, follow_symlinks=False).st_mode),
+                "-",
+                "-",
+                "0",
+                f"{abs_file.stem} -> {file}" if include_full_link and link else str(file.stem),
+                ansi.COLORS.TEXT.RED
+            ])
 
-            try:
-                temp_strings.append([
-                    stat.filemode(os.stat(abs_file, follow_symlinks=False).st_mode),
-                    file.owner(),
-                    file.group(),
-                    (bytes_to_human if "h" in args["args"] else str)(os.path.getsize(file)),
-                    f"{abs_file.stem} -> {file}" if link else str(file.stem) if i != "." else "."
-                ])
+    SQUO = "'"
 
-                if link:
-                    color = ansi.COLORS.TEXT.BRIGHT_YELLOW
-                elif os.path.isdir(abs_file):
-                    color = ansi.COLORS.TEXT.BRIGHT_BLUE
-                elif temp_strings[-1][0][6] == "x":
-                    color = ansi.COLORS.TEXT.BRIGHT_GREEN
-                else:
-                    color = ""
-
-                temp_strings[-1].append(color)
-
-            except FileNotFoundError:
-                temp_strings.append([
-                    stat.filemode(os.stat(abs_file, follow_symlinks=False).st_mode),
-                    "-",
-                    "-",
-                    "0",
-                    f"{abs_file.stem} -> {file}" if link else str(file.stem),
-                    ansi.COLORS.TEXT.BRIGHT_RED
-                ])
-
+    if "l" in args["args"]:
         inverse_temp_strings = [
             [], [], []
         ]
@@ -108,12 +129,12 @@ def ls(command: str, path: pathlib.Path) -> str:
             max_length(inverse_temp_strings[2])
         ]
 
-        SQUO = "'"
-        strings = [str(path), ""] + [f"{i[0]} {pad_start(i[1], maxes[0])} {pad_start(i[2], maxes[1])} {pad_start(i[3], maxes[2])} {i[5]}{SQUO if ' ' in i[4] else ' ' if include_space_on_filenames else ''}{i[4]}{SQUO if ' ' in i[4] else ''}{ansi.COLORS.RESET}" for i in temp_strings]
+        strings = [str(path), ""] + [f"{i[0]} {pad_start(i[1], maxes[0])} {pad_start(i[2], maxes[1])} {pad_start(i[3], maxes[2])} {i[5]}{'' if not include_space_on_filenames else SQUO if ' ' in i[4] else ' '}{i[4]}{SQUO if ' ' in i[4] and include_space_on_filenames else ''}{ansi.COLORS.RESET}" for i in temp_strings]
+        joiner = "\n"
 
     else:
-        strings = sorted(directories, key=sort, reverse="r" in args["args"])
-        joiner = " "
+        strings = [f"{i[5]}{'' if not include_space_on_filenames else SQUO if ' ' in i[4] else ' '}{i[4]}{SQUO if ' ' in i[4] and include_space_on_filenames else ''}{ansi.COLORS.RESET}" for i in temp_strings]
+        joiner = "  "
 
     return joiner.join(strings) + "\n"
 
