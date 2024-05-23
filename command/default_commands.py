@@ -13,7 +13,11 @@ def test_args(command: str, path: pathlib.Path) -> str:
 def ls(command: str, path: pathlib.Path) -> str:
     def sort(a):
         if "s" in args["args"]:
-            ... # sort by filesize
+            try:
+                return os.path.getsize(path / a)
+            except FileNotFoundError:
+                print("a")
+                return 0
 
         if "t" in args["args"]:
             ... # sort by time modified
@@ -24,6 +28,15 @@ def ls(command: str, path: pathlib.Path) -> str:
 
     args = get_command_args(command)
     directories = os.listdir(path)
+
+    enable_parent = "a" in args["args"]
+    if not enable_parent and "A" not in args["args"]:
+        directories = [i for i in directories if i[0] != "."]
+
+    directories = sorted(directories, key=sort, reverse="r" in args["args"])
+
+    if enable_parent:
+        directories = [".", ".."] + directories
 
     if "l" in args["args"]:
         temp_strings = []
@@ -56,7 +69,7 @@ def ls(command: str, path: pathlib.Path) -> str:
                     file.owner(),
                     file.group(),
                     (bytes_to_human if "h" in args["args"] else str)(os.path.getsize(file)),
-                    f"{abs_file.stem} -> {file}" if link else str(file.stem)
+                    f"{abs_file.stem} -> {file}" if link else str(file.stem) if i != "." else "."
                 ])
 
                 if link:
@@ -109,7 +122,7 @@ def not_implemented(command, path) -> str:
 
 default_commands: list[tuple[str, str, Callable]] = [
     ("test", "Returns all of the arguments passed into the command. Used for debugging.", test_args),
-    ("ls", "Lists the files in the current directory.", ls),
+    ("ls", "Lists the files in the current directory. Usage: ls [-aAlLrst] [path]\n    -a - List all files\n    -A - List all except root and parent\n    -l - Long format\n    -L - Label columns (only works with -l)\n    -r - Reverse order\n    -s - Sort by file size\n    -t - Sort by date modified", ls),
     ("cd", "Not implemented :3", not_implemented),
     ("cat", "Not implemented :3", not_implemented),
     ("echo", "Not implemented :3", not_implemented),
