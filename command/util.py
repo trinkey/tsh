@@ -65,7 +65,8 @@ def get_command_args(command: str) -> dict[str, list[str]]:
             quotes = False
             quote_type = ""
 
-        elif i == "\\":
+        # the inline if is only to fix windows fuckery where backslashes are used in paths
+        elif i == ("`" if os.name == "nt" else "\\"):
             escape = not escape
             if not escape:
                 string += i

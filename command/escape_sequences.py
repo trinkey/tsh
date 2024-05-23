@@ -1,4 +1,5 @@
-from .ansi import ansi
+import os
+
 from .util import get_escape_string
 
 from typing import Callable
@@ -9,11 +10,11 @@ def delete(
     past_index: int,
     cursor_position: int
 ) -> tuple[str, int, int]:
-    current_command = current_command[:cursor_position - 3:] + current_command[cursor_position + 1::]
+    current_command = current_command[:cursor_position - (1 if os.name == "nt" else 3):] + current_command[cursor_position + 1::]
     return (
         current_command,
         past_index,
-        cursor_position - 3
+        cursor_position - (1 if os.name == "nt" else 3)
     )
 
 def left(
@@ -23,9 +24,9 @@ def left(
     cursor_position: int
 ) -> tuple[str, int, int]:
     return (
-        current_command[:cursor_position - 2:] + current_command[cursor_position::],
+        current_command[:cursor_position - (1 if os.name == "nt" else 2):] + current_command[cursor_position::],
         past_index,
-        max(0, cursor_position - 3)
+        max(0, cursor_position - (2 if os.name == "nt" else 3))
     )
 
 def right(
@@ -35,9 +36,9 @@ def right(
     cursor_position: int
 ) -> tuple[str, int, int]:
     return (
-        current_command[:cursor_position - 2:] + current_command[cursor_position::],
+        current_command[:cursor_position - (1 if os.name == "nt" else 2):] + current_command[cursor_position::],
         past_index,
-        min(len(current_command), cursor_position - 1)
+        min(len(current_command), cursor_position - (0 if os.name == "nt" else 1))
     )
 
 def home(
@@ -47,7 +48,7 @@ def home(
     cursor_position: int
 ) -> tuple[str, int, int]:
     return (
-        current_command[:cursor_position - 2:] + current_command[cursor_position::],
+        current_command[:cursor_position - (1 if os.name == "nt" else 2):] + current_command[cursor_position::],
         past_index,
         0
     )
@@ -59,9 +60,9 @@ def end(
     cursor_position: int
 ) -> tuple[str, int, int]:
     return (
-        current_command[:cursor_position - 2:] + current_command[cursor_position::],
+        current_command[:cursor_position - (1 if os.name == "nt" else 2):] + current_command[cursor_position::],
         past_index,
-        len(current_command) - 2
+        len(current_command) - (1 if os.name == "nt" else 2)
     )
 
 escape_sequences: dict[str, Callable] = {

@@ -55,6 +55,8 @@ class Display(_Display):
         return chunks
 
     def keyboard_event(self, key: int) -> None:
+        # open("keys.log", "a").write(f"{key} ")
+
         width = self.term_size().width # type: ignore
 
         if key == 3: # Ctrl + C
@@ -104,7 +106,7 @@ class Display(_Display):
         if key == 0 or key == 27 or key == 224: # Escape character
             self.escape_sequence = [key]
 
-        elif len(self.escape_sequence) > 0 and len(self.escape_sequence) <= 5 and self.escape_sequence[0] == 27:
+        elif len(self.escape_sequence) > 0 and len(self.escape_sequence) <= 5:
             self.escape_sequence.append(key)
             escape_string = get_escape_string(self.escape_sequence)
 

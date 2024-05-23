@@ -29,7 +29,7 @@ def ls(command: str, path: pathlib.Path) -> str:
     args = get_command_args(command)
 
     for i in args["args"]:
-        if i not in "aAlLrst":
+        if i not in "aAhlLrst":
             return f"{ansi.COLORS.TEXT.RED}Invalid argument '{i}'.{ansi.COLORS.RESET}\nYou can view the command format by running '{ansi.COLORS.TEXT.GREEN}help ls{ansi.COLORS.RESET}'.\n"
 
     if len(args["strings"]) == 1:
@@ -82,13 +82,22 @@ def ls(command: str, path: pathlib.Path) -> str:
             include_space_on_filenames = True
 
         try:
-            temp_strings.append([
-                stat.filemode(os.stat(abs_file, follow_symlinks=False).st_mode),
-                file.owner(),
-                file.group(),
-                (bytes_to_human if "h" in args["args"] else str)(os.path.getsize(file)),
-                f"{abs_file.stem} -> {file}" if include_full_link and link else str(file.stem) if i != "." else "."
-            ])
+            if os.name == "nt":
+                temp_strings.append([
+                    stat.filemode(os.stat(abs_file, follow_symlinks=False).st_mode),
+                    "",
+                    "",
+                    (bytes_to_human if "h" in args["args"] else str)(os.path.getsize(file)),
+                    f"{abs_file.stem} -> {file}" if include_full_link and link else str(file.stem) if i != "." else "."
+                ])
+            else:
+                temp_strings.append([
+                    stat.filemode(os.stat(abs_file, follow_symlinks=False).st_mode),
+                    file.owner(),
+                    file.group(),
+                    (bytes_to_human if "h" in args["args"] else str)(os.path.getsize(file)),
+                    f"{abs_file.stem} -> {file}" if include_full_link and link else str(file.stem) if i != "." else "."
+                ])
 
             if link:
                 color = ansi.COLORS.TEXT.BRIGHT_YELLOW
@@ -129,7 +138,7 @@ def ls(command: str, path: pathlib.Path) -> str:
             max_length(inverse_temp_strings[2])
         ]
 
-        strings = [str(path), ""] + [f"{i[0]} {pad_start(i[1], maxes[0])} {pad_start(i[2], maxes[1])} {pad_start(i[3], maxes[2])} {i[5]}{'' if not include_space_on_filenames else SQUO if ' ' in i[4] else ' '}{i[4]}{SQUO if ' ' in i[4] and include_space_on_filenames else ''}{ansi.COLORS.RESET}" for i in temp_strings]
+        strings = [str(path), ""] + [f"{pad_start(i[0], 10)}" + ("" if os.name == "nt" else f" {pad_start(i[1], maxes[0])} {pad_start(i[2], maxes[1])}") + f" {pad_start(i[3], maxes[2])} {i[5]}{'' if not include_space_on_filenames else SQUO if ' ' in i[4] else ' '}{i[4]}{SQUO if ' ' in i[4] and include_space_on_filenames else ''}{ansi.COLORS.RESET}" for i in temp_strings]
         joiner = "\n"
 
     else:
@@ -143,7 +152,7 @@ def not_implemented(command, path) -> str:
 
 default_commands: list[tuple[str, str, Callable]] = [
     ("test", "Returns all of the arguments passed into the command. Used for debugging.", test_args),
-    ("ls", "Lists the files in the current directory. Usage: ls [-aAlLrst] [path]\n    -a - List all files\n    -A - List all except root and parent\n    -l - Long format\n    -L - Label columns (only works with -l)\n    -r - Reverse order\n    -s - Sort by file size\n    -t - Sort by date modified", ls),
+    ("ls", "Lists the files in the current directory. Usage: ls [-aAhlLrst] [path]\n    -a - List all files\n    -A - List all except root and parent\n    -h - Human readable file sizes\n    -l - Long format\n    -L - Label columns (only works with -l)\n    -r - Reverse order\n    -s - Sort by file size\n    -t - Sort by date modified", ls),
     ("cd", "Not implemented :3", not_implemented),
     ("cat", "Not implemented :3", not_implemented),
     ("echo", "Not implemented :3", not_implemented),
