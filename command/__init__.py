@@ -5,13 +5,13 @@ from .util import get_char
 from .types import _Display as display
 from .default_commands import default_commands
 
-from typing import Callable
+from typing import Callable, Union
 
 display = Display()
 command_manager = CommandManager()
 
 def run(
-    command_override: list[tuple[str, str, Callable]] | None = None
+    command_override: Union[list[tuple[str, str, Callable]], None] = None
 ):
     import threading
 

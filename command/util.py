@@ -3,6 +3,7 @@ import os
 import re
 
 from readchar import readchar
+from typing import Union
 
 hostname: str = socket.gethostname()
 username: str = os.getlogin()
@@ -89,7 +90,7 @@ def get_command_args(command: str) -> dict[str, list[str]]:
 
     return output
 
-def bytes_to_human(count: int | float) -> str:
+def bytes_to_human(count: Union[int, float]) -> str:
     sizes = "KMGTPEZY"
     index = 0
     size_str = ""
