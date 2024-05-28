@@ -147,6 +147,9 @@ def ls(command: str, path: pathlib.Path) -> str:
 
     return joiner.join(strings) + "\n"
 
+def clear(command, path) -> str:
+    return f"{ansi.ERASE.SAVED_LINES}{ansi.CURSOR.HOME}"
+
 def not_implemented(command, path) -> str:
     return f"{ansi.COLORS.TEXT.RED}Not implemented :3{ansi.COLORS.RESET}\n"
 
@@ -159,5 +162,6 @@ default_commands: list[tuple[str, str, Callable]] = [
     ("touch", "Not implemented :3", not_implemented),
     ("mkdir", "Not implemented :3", not_implemented),
     ("mv", "Not implemented :3", not_implemented),
-    ("cp", "Not implemented :3", not_implemented)
+    ("cp", "Not implemented :3", not_implemented),
+    ("clear", "Clears the screen and ALL of the display history. Command history (accessed via up/down buttons) is still saved.", clear)
 ]

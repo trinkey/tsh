@@ -32,7 +32,7 @@ class CommandManager(_CommandManager):
             else:
                 commands = self.commands
 
-            for command in commands:
+            for command in sorted(commands):
                 try:
                     output += f"{ansi.COLORS.TEXT.BRIGHT_YELLOW}{command}{ansi.COLORS.RESET}\n  {self.commands[command]}\n"
                 except KeyError:
