@@ -22,8 +22,8 @@ how to use:
    - [x] right
    - [x] home
    - [x] end
-   - [ ] up
-   - [ ] down
+   - [x] up
+   - [x] down
    - [ ] tab (maybe wait until after implementing some commands?)
 2. implement basic commands
    - [x] ls

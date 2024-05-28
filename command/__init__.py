@@ -1,8 +1,9 @@
+import threading
+
 from .command_manager import CommandManager
 from .command import Command
 from .display import Display
 from .util import get_char
-from .types import _Display as display
 from .default_commands import default_commands
 
 from typing import Callable, Union
@@ -13,23 +14,12 @@ command_manager = CommandManager()
 def run(
     command_override: Union[list[tuple[str, str, Callable]], None] = None
 ):
-    import threading
-
     def th():
-        global display, command_manager
-        if command_override is None:
-            for i in default_commands:
-                Command(
-                    i[0], i[1], i[2],
-                    command_manager
-                )
-
-        else:
-            for i in command_override:
-                Command(
-                    i[0], i[1], i[2],
-                    command_manager
-                )
+        for i in command_override or default_commands:
+            Command(
+                i[0], i[1], i[2],
+                command_manager
+            )
 
         display._hook_manager(command_manager)
         command_manager._hook_display(display)

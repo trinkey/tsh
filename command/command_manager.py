@@ -11,6 +11,7 @@ class CommandManager(_CommandManager):
         self.commands[command.command_name] = command
 
     def command(self, command: str) -> str:
+        self.display.past_index = 0
         self.previous_commands.append(command)
         command_name = command.split(" ", 1)[0]
         width = self.display.term_size().width # type: ignore

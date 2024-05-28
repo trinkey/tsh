@@ -18,6 +18,7 @@ class Display(_Display):
         self.past_index: int = 0
         self.previous_line: str = ""
         self.prev_lines_up: int = 0
+        self.user_path: str = os.path.expanduser("~")
 
     def term_size(self) -> DotIndex:
         x = shutil.get_terminal_size()
@@ -163,13 +164,20 @@ class Display(_Display):
     def _insert_character(self, char: str) -> None:
         self.current_input = self.current_input[:self.cursor_position:] + char + self.current_input[self.cursor_position::]
 
-    def _start(self, default_path: Path=Path(os.path.expanduser("~/"))) -> None:
+    def _start(self, default_path: Path=Path(os.path.expanduser("~"))) -> None:
         self.path = default_path
         self.display_text(self._get_ps1())
         sys.stdout.flush()
 
     def _get_ps1(self) -> str:
-        return f"{ansi.COLORS.TEXT.BRIGHT_GREEN}{ansi.STYLES.BOLD}{username}@{hostname}{ansi.COLORS.RESET}:{ansi.COLORS.TEXT.BRIGHT_BLUE}{ansi.STYLES.BOLD}{self.path}{ansi.COLORS.RESET}$ "
+        path = str(self.path)
+        try:
+            if path.index(self.user_path) == 0:
+                path = path.replace(self.user_path, "~", 1)
+        except ValueError:
+            pass
+
+        return f"{ansi.COLORS.TEXT.BRIGHT_GREEN}{ansi.STYLES.BOLD}{username}@{hostname}{ansi.COLORS.RESET}:{ansi.COLORS.TEXT.BRIGHT_BLUE}{ansi.STYLES.BOLD}{path}{ansi.COLORS.RESET}$ "
 
     def _print(self, text: str) -> None:
         print(text, end="")
