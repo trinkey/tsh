@@ -1,5 +1,5 @@
 # tsh
-(**t**rinkey **sh**ell - name idea by @uncenter)
+(**t**rinkey **sh**ell - name idea by [@uncenter](https://github.com/uncenter/))
 
 it's like bash but i made it
 
