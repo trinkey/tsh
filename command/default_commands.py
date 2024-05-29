@@ -41,7 +41,7 @@ def ls(command: str, path: pathlib.Path) -> str:
             path = path / args["strings"][0]
 
     elif len(args["strings"]) > 1:
-        return f"{ansi.COLORS.TEXT.RED}Invalid amount of arg strings (expected 0-1, got {len(args['strings'])}){ansi.COLORS.RESET}\n"
+        return f"{ansi.COLORS.TEXT.RED}ls: Invalid amount of arg strings (expected 0-1, got {len(args['strings'])}){ansi.COLORS.RESET}\n"
 
     directories = os.listdir(path)
 
@@ -147,17 +147,59 @@ def ls(command: str, path: pathlib.Path) -> str:
 
     return joiner.join(strings) + "\n"
 
-def clear(command, path) -> str:
+def clear(command: str, path: pathlib.Path) -> str:
     return f"{ansi.ERASE.SAVED_LINES}{ansi.CURSOR.HOME}"
 
-def not_implemented(command, path) -> str:
+def cat(command: str, path: pathlib.Path) -> str:
+    args = get_command_args(command)
+
+    for i in args["args"]:
+        if i not in "cnNs":
+            return f"{ansi.COLORS.TEXT.RED}Invalid argument '{i}'.{ansi.COLORS.RESET}\nYou can view the command format by running '{ansi.COLORS.TEXT.GREEN}help cat{ansi.COLORS.RESET}'.\n"
+
+    if not len(args["strings"]):
+        return f"{ansi.COLORS.TEXT.RED}cat: File not specified.{ansi.COLORS.RESET}\n"
+
+    output = ""
+    for i in args["strings"]:
+        try:
+            abs_file = path / i if i[0] not in "~/" else pathlib.Path(os.path.expanduser(i))
+            link = os.path.islink(abs_file)
+
+            if link:
+                x = os.readlink(abs_file)
+                file = pathlib.Path(("/" if x[0] not in "~/" else "") + (os.path.expanduser(x) if x[0] == "~" else x))
+            else:
+                file = abs_file
+
+            f = open(file, "rb").read().decode('utf-8', errors='replace')
+
+            if "c" in args["args"]:
+                output += f"{len(f)}\n"
+
+            elif "n" in args["args"] or "N" in args["args"] or "s" in args["args"]:
+                ...
+
+            else:
+                output += f"{f}\n"
+
+        except IsADirectoryError:
+            output += f"{ansi.COLORS.TEXT.RED}cat: {file} is a directory{ansi.COLORS.RESET}\n"
+        except FileNotFoundError:
+            output += f"{ansi.COLORS.TEXT.RED}cat: {file} not found{ansi.COLORS.RESET}\n"
+        except PermissionError:
+            output += f"{ansi.COLORS.TEXT.RED}cat: Permission denied{ansi.COLORS.RESET}\n"
+
+    return output
+
+def not_implemented(command: str, path: pathlib.Path) -> str:
     return f"{ansi.COLORS.TEXT.RED}Not implemented :3{ansi.COLORS.RESET}\n"
 
 default_commands: list[tuple[str, str, Callable]] = [
     ("test", "Returns all of the arguments passed into the command. Used for debugging.", test_args),
     ("ls", "Lists the files in the current directory. Usage: ls [-aAhlLrst] [path]\n    -a - List all files\n    -A - List all except root and parent\n    -h - Human readable file sizes\n    -l - Long format\n    -L - Label columns (only works with -l)\n    -r - Reverse order\n    -s - Sort by file size\n    -t - Sort by date modified", ls),
     ("cd", "Not implemented :3", not_implemented),
-    ("cat", "Not implemented :3", not_implemented),
+    ("cat", "Displays the contents of a file. Usage: cat [-cnNs --crlf] [path[, path2, ...]]\n    -c - Returns only the character count\n    -n - Numbers the lines\n    -N - Numbers non-empty lines\n    -s - Don't display blank lines\n    --crlf - Use a carriage return followed by a line feed as the line ending. This overrides the default of just a single line feed", cat),
     ("echo", "Not implemented :3", not_implemented),
     ("touch", "Not implemented :3", not_implemented),
     ("mkdir", "Not implemented :3", not_implemented),

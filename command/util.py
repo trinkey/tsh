@@ -14,8 +14,10 @@ def get_char() -> int:
 def get_escape_string(sequence: list[int]) -> str:
     return "-".join([str(i) for i in sequence])
 
-def ansi_length(text: str) -> int:
-    return len(re.sub(r"(\x9b|\x1b\[)[0-?]*[ -\/]*[@-~]", "", text))
+def ansi_length(text: Union[str, bytes]) -> int:
+    if isinstance(text, str):
+        return len(re.sub(r"(\x9b|\x1b\[)[0-?]*[ -\/]*[@-~]", "", text))
+    return len(text)
 
 def get_command_args(command: str) -> dict[str, list[str]]:
     quotes = False
