@@ -78,7 +78,7 @@ def ls(command: str, path: pathlib.Path) -> str:
         else:
             file = abs_file
 
-        if not include_space_on_filenames and (" " in str(file.stem) + str(abs_file.stem)):
+        if not include_space_on_filenames and (" " in str(file.name) + str(abs_file.name)):
             include_space_on_filenames = True
 
         try:
@@ -88,7 +88,7 @@ def ls(command: str, path: pathlib.Path) -> str:
                     "",
                     "",
                     (bytes_to_human if "h" in args["args"] else str)(os.path.getsize(file)),
-                    f"{abs_file.stem} -> {file}" if include_full_link and link else str(file.stem) if i != "." else "."
+                    f"{abs_file.name} -> {file}" if include_full_link and link else str(file.name) if i != "." else "."
                 ])
             else:
                 temp_strings.append([
@@ -96,7 +96,7 @@ def ls(command: str, path: pathlib.Path) -> str:
                     file.owner(),
                     file.group(),
                     (bytes_to_human if "h" in args["args"] else str)(os.path.getsize(file)),
-                    f"{abs_file.stem} -> {file}" if include_full_link and link else str(file.stem) if i != "." else "."
+                    f"{abs_file.name} -> {file}" if include_full_link and link else str(file.name) if i != "." else "."
                 ])
 
             if link:
@@ -116,7 +116,7 @@ def ls(command: str, path: pathlib.Path) -> str:
                 "-",
                 "-",
                 "0",
-                f"{abs_file.stem} -> {file}" if include_full_link and link else str(file.stem),
+                f"{abs_file.name} -> {file}" if include_full_link and link else str(file.name),
                 ansi.COLORS.TEXT.RED
             ])
 
@@ -160,7 +160,9 @@ def cat(command: str, path: pathlib.Path) -> str:
     if not len(args["strings"]):
         return f"{ansi.COLORS.TEXT.RED}cat: File not specified.{ansi.COLORS.RESET}\n"
 
+    file = pathlib.Path
     output = ""
+
     for i in args["strings"]:
         try:
             abs_file = path / i if i[0] not in "~/" else pathlib.Path(os.path.expanduser(i))
