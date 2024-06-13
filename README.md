@@ -1,3 +1,6 @@
+> [!WARNING]
+> This repository is now on [git.gay](https://git.gay/trinkey/tsh)! The github version will no longer be maintained.
+
 # tsh
 (**t**rinkey **sh**ell - name idea by [@uncenter](https://github.com/uncenter/))
 
